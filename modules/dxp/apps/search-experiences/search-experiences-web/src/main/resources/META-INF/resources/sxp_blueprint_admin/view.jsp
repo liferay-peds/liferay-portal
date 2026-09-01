@@ -16,18 +16,16 @@ String tabs1 = ParamUtil.getString(request, "tabs1", "sxpBlueprints");
 	navigationItems='<%=
 		new JSPNavigationItemList(pageContext) {
 			{
-				add(
-					navigationItem -> {
-						navigationItem.setActive(tabs1.equals("sxpBlueprints"));
-						navigationItem.setHref(renderResponse.createRenderURL(), "tabs1", "sxpBlueprints", "mvcRenderCommandName", "/sxp_blueprint_admin/view_sxp_blueprints");
-						navigationItem.setLabel(LanguageUtil.get(request, "blueprints"));
-					});
-				add(
-					navigationItem -> {
-						navigationItem.setActive(tabs1.equals("sxpElements"));
-						navigationItem.setHref(renderResponse.createRenderURL(), "tabs1", "sxpElements", "mvcRenderCommandName", "/sxp_blueprint_admin/view_sxp_elements", "hidden", Boolean.FALSE);
-						navigationItem.setLabel(LanguageUtil.get(request, "elements"));
-					});
+				for (SXPBlueprintAdminNavigationTab sxpBlueprintAdminNavigationTab : SXPBlueprintAdminNavigationConstants.sxpBlueprintAdminNavigationTabs) {
+					add(
+						navigationItem -> {
+							navigationItem.setActive(tabs1.equals(sxpBlueprintAdminNavigationTab.getTabs1Name()));
+
+							navigationItem.setHref(renderResponse.createRenderURL(), "tabs1", sxpBlueprintAdminNavigationTab.getTabs1Name(), "mvcRenderCommandName", sxpBlueprintAdminNavigationTab.getMVCRenderCommandName());
+
+							navigationItem.setLabel(LanguageUtil.get(request, sxpBlueprintAdminNavigationTab.getLabelKey()));
+						});
+				}
 			}
 		}
 	%>'
