@@ -5,9 +5,13 @@
 
 package com.liferay.frontend.token.definition.util;
 
+import com.liferay.frontend.token.definition.FrontendToken;
+import com.liferay.frontend.token.definition.FrontendTokenDefinition;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -19,6 +23,8 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+
+import org.mockito.Mockito;
 
 /**
  * @author Gabriel Lima
@@ -37,6 +43,7 @@ public class FrontendTokenDefinitionUtilTest {
 		_testGetFrontendTokenNamesWithInvalidCategories();
 		_testGetFrontendTokenNamesWithInvalidSetsAndTokens();
 		_testGetFrontendTokenNamesWithMalformedDefinition();
+		_testGetFrontendTokenNamesWithThemeAndCustomTokenDefinitions();
 		_testGetFrontendTokenNamesWithValidDefinition();
 	}
 
@@ -54,6 +61,35 @@ public class FrontendTokenDefinitionUtilTest {
 		).toString();
 	}
 
+	private FrontendTokenDefinition _mockFrontendTokenDefinition(
+		String... frontendTokenNames) {
+
+		FrontendTokenDefinition frontendTokenDefinition = Mockito.mock(
+			FrontendTokenDefinition.class);
+
+		List<FrontendToken> frontendTokens = TransformUtil.transformToList(
+			frontendTokenNames,
+			frontendTokenName -> {
+				FrontendToken frontendToken = Mockito.mock(FrontendToken.class);
+
+				Mockito.when(
+					frontendToken.getName()
+				).thenReturn(
+					frontendTokenName
+				);
+
+				return frontendToken;
+			});
+
+		Mockito.when(
+			frontendTokenDefinition.getFrontendTokens()
+		).thenReturn(
+			frontendTokens
+		);
+
+		return frontendTokenDefinition;
+	}
+
 	private void _testGetFrontendTokenNamesWithBlankDefinition() {
 		List<String> frontendTokenNames =
 			FrontendTokenDefinitionUtil.getFrontendTokenNames(null);
@@ -62,6 +98,16 @@ public class FrontendTokenDefinitionUtilTest {
 
 		frontendTokenNames = FrontendTokenDefinitionUtil.getFrontendTokenNames(
 			"");
+
+		Assert.assertTrue(frontendTokenNames.isEmpty());
+
+		frontendTokenNames = FrontendTokenDefinitionUtil.getFrontendTokenNames(
+			null, null);
+
+		Assert.assertTrue(frontendTokenNames.isEmpty());
+
+		frontendTokenNames = FrontendTokenDefinitionUtil.getFrontendTokenNames(
+			null, "");
 
 		Assert.assertTrue(frontendTokenNames.isEmpty());
 	}
@@ -145,6 +191,32 @@ public class FrontendTokenDefinitionUtilTest {
 				"Unable to parse frontend token definition",
 				logEntry.getMessage());
 		}
+	}
+
+	private void _testGetFrontendTokenNamesWithThemeAndCustomTokenDefinitions() {
+		String frontendTokenName1 = RandomTestUtil.randomString();
+
+		String frontendTokenDefinitionJSON = _createFrontendTokenDefinitionJSON(
+			JSONUtil.putAll(
+				JSONUtil.put(
+					"frontendTokens",
+					JSONUtil.putAll(JSONUtil.put("name", frontendTokenName1))
+				).put(
+					"name", RandomTestUtil.randomString()
+				)));
+
+		Assert.assertEquals(
+			ListUtil.fromArray(frontendTokenName1),
+			FrontendTokenDefinitionUtil.getFrontendTokenNames(
+				null, frontendTokenDefinitionJSON));
+
+		String frontendTokenName2 = RandomTestUtil.randomString();
+
+		Assert.assertEquals(
+			ListUtil.fromArray(frontendTokenName2, frontendTokenName1),
+			FrontendTokenDefinitionUtil.getFrontendTokenNames(
+				_mockFrontendTokenDefinition(frontendTokenName2),
+				frontendTokenDefinitionJSON));
 	}
 
 	private void _testGetFrontendTokenNamesWithValidDefinition() {
